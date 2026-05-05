@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Concierge Service</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* СВЕТЛАЯ ТЕМА (день) */
+        :root {
+            --gl-green: #09a326;
+            --gl-green-light: #0bbe2d;
+            --gl-accent: #09a326;
+            --gl-text: #212121;
+            --gl-text-muted: #707070;
+            --gl-bg: #f5f5f5;
+            --gl-card: #ffffff;
+            --gl-card-border: rgba(0,0,0,0.08);
+            --gl-wifi-bg: #f0fdf4;
+            --gl-banner: #ffffff;
+            --gl-header-bg: rgba(255,255,255,0.92);
+            --gl-modal-bg: #ffffff;
+            --gl-select-bg: #f5f5f5;
+            --gl-btn-disabled-bg: rgba(0,0,0,0.07);
+            --gl-btn-disabled-text: #aaaaaa;
+        }
+
+        /* ТЁМНАЯ ТЕМА (ночь) */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --gl-green: #4a7a60;
+                --gl-green-light: #6aaa88;
+                --gl-accent: #8aab96;
+                --gl-text: #f0e6d3;
+                --gl-text-muted: #8a9a90;
+                --gl-bg: #0a1628;
+                --gl-card: rgba(255,255,255,0.045);
+                --gl-card-border: rgba(255,255,255,0.085);
+                --gl-wifi-bg: rgba(74,122,96,0.12);
+                --gl-banner: rgba(255,255,255,0.04);
+                --gl-header-bg: rgba(10,22,40,0.88);
+                --gl-modal-bg: #0f2035;
+                --gl-select-bg: rgba(255,255,255,0.05);
+                --gl-btn-disabled-bg: rgba(255,255,255,0.08);
+                --gl-btn-disabled-text: #8a9a90;
+            }
+        }
+
+        * { box-sizing: border-box; }
+
+        .skiptranslate iframe { display: none !important; }
+        body { top: 0 !important; }
+        .goog-te-balloon-frame { display: none !important; }
+        .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
+
+        body {
+            font-family: 'Jost', sans-serif;
+            background-color: var(--gl-bg);
+            background-image: none;
+            margin: 0; padding: 0;
+            color: var(--gl-text);
+            -webkit-tap-highlight-color: transparent;
+            min-height: 100vh;
+            transition: background-color 0.4s, color 0.4s;
+        }
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-image:
+                    radial-gradient(ellipse 90% 50% at 50% -5%, #1a3a5c 0%, transparent 65%),
+                    radial-gradient(ellipse 50% 40% at 90% 100%, #0d2518 0%, transparent 55%);
+            }
+        }
+
+        header {
+            background: var(--gl-header-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--gl-card-border);
+            padding: 14px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000;
+        }
+        @media not all and (prefers-color-scheme: dark) {
+            header { border-bottom: 3px solid var(--gl-green); }
+        }
+
+        header h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 300;
+            font-size: 22px;
+            letter-spacing: 0.12em;
+            color: var(--gl-text);
+            margin: 0;
+        }
+
+        .wifi-btn {
+            background: var(--gl-green);
+            color: #ffffff;
+            border: none;
+            padding: 9px 20px;
+            border-radius: 25px;
+            font-size: 11px;
+            font-weight: 500;
+            font-family: 'Jost', sans-serif;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            display: flex; align-items: center; gap: 8px;
+            transition: background 0.2s;
+        }
+        .wifi-btn:hover { background: var(--gl-green-light); }
+
+        .container { max-width: 960px; margin: 0 auto; padding: 28px 20px 60px; }
+
+        /* === БАННЕР: СПЛИТ-ЛЕЙАУТ === */
+        .room-banner-wrap {
+            display: grid;
+            grid-template-columns: 190px 1fr;
+            gap: 16px;
+            margin-bottom: 32px;
+            align-items: stretch;
+        }
+        @media (max-width: 560px) {
+            .room-banner-wrap { grid-template-columns: 1fr; }
+        }
+
+        /* --- Блок комнаты --- */
+        .room-banner {
+            background: #2a2a2a;
+            color: #ffffff;
+            padding: 26px 18px 22px;
+            border-radius: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .room-banner::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse 80% 70% at 50% -10%, rgba(255,255,255,0.07) 0%, transparent 65%);
+            pointer-events: none;
+        }
+        @media (prefers-color-scheme: dark) {
+            .room-banner {
+                background: linear-gradient(160deg, #1e2e22 0%, #0d1a12 100%);
+                border: 1px solid rgba(74,122,96,0.25);
+            }
+        }
+
+        #ui-room {
+            font-size: 10px;
+            opacity: 0.5;
+            text-transform: uppercase;
+            letter-spacing: 0.25em;
+            display: block;
+            margin-bottom: 6px;
+            position: relative; z-index: 1;
+        }
+
+        .room-display {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 4px; position: relative; z-index: 1;
+        }
+        .room-display strong {
+            font-size: 64px;
+            font-weight: 300;
+            font-family: 'Cormorant Garamond', serif;
+            color: #ffffff;
+            letter-spacing: 0.06em;
+            line-height: 1;
+        }
+        @media (prefers-color-scheme: dark) {
+            .room-display strong { color: #f0e6d3; }
+        }
+
+        /* ЗОЛОТОЙ КЛЮЧИК */
+        .room-key-wrap {
+            display: flex; align-items: center; justify-content: center;
+            animation: key-swing 3s ease-in-out infinite;
+            transform-origin: top center;
+            margin-bottom: 8px;
+        }
+        .room-key-svg { width: 42px; height: 42px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3)); }
+        @media (prefers-color-scheme: dark) {
+            .room-key-svg { filter: drop-shadow(0 2px 10px rgba(212,160,23,0.45)); }
+        }
+        @keyframes key-swing {
+            0%   { transform: rotate(-12deg); }
+            50%  { transform: rotate(12deg); }
+            100% { transform: rotate(-12deg); }
+        }
+
+        /* --- Блок промо --- */
+        .promo-banner {
+            background: var(--gl-card);
+            border: 1px solid var(--gl-card-border);
+            border-radius: 20px;
+            padding: 24px 26px;
+            display: flex; flex-direction: column; justify-content: center;
+            gap: 6px;
+            position: relative; overflow: hidden;
+            transition: border-color 0.25s;
+        }
+        .promo-banner:hover { border-color: rgba(9,163,38,0.3); }
+        @media (prefers-color-scheme: dark) {
+            .promo-banner:hover { border-color: rgba(74,122,96,0.4); }
+        }
+        .promo-tag {
+            font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+            color: var(--gl-green); font-weight: 500;
+        }
+        .promo-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 400; font-size: 26px;
+            color: var(--gl-text); line-height: 1.2;
+        }
+        .promo-desc {
+            font-size: 14px; color: var(--gl-text-muted); line-height: 1.6;
+        }
+        .promo-btn {
+            display: inline-block; margin-top: 8px;
+            background: var(--gl-green); color: #fff;
+            font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+            padding: 10px 22px; border-radius: 20px;
+            font-family: 'Jost', sans-serif; font-weight: 500;
+            width: fit-content; cursor: pointer; border: none;
+            text-decoration: none;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .promo-btn:hover { filter: brightness(1.1); }
+        .promo-btn:active { transform: scale(0.97); }
+        .promo-banner.hidden { display: none; }
+
+        .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+
+        /* === ИНФО-СЕКЦИЯ === */
+        .info-section {
+            margin-top: 48px;
+        }
+        .info-section-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 300; font-size: 28px;
+            color: var(--gl-text); letter-spacing: 0.06em;
+            margin-bottom: 6px;
+        }
+        .info-section-sub {
+            font-size: 12px; color: var(--gl-text-muted);
+            letter-spacing: 0.1em; text-transform: uppercase;
+            margin-bottom: 24px;
+        }
+        .info-divider {
+            width: 50px; height: 1px;
+            background: linear-gradient(to right, var(--gl-green), transparent);
+            margin-bottom: 24px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+        }
+        /* Штрафные карточки — одинаковая высота */
+        .info-grid .info-warn {
+            grid-column: span 1;
+            align-self: stretch;
+        }
+        .info-card {
+            background: var(--gl-card);
+            border: 1px solid var(--gl-card-border);
+            border-radius: 16px;
+            padding: 20px 20px 18px;
+            display: flex; gap: 16px; align-items: flex-start;
+            transition: border-color 0.2s;
+            height: 100%;
+        }
+        .info-card:hover { border-color: rgba(9,163,38,0.25); }
+        @media (prefers-color-scheme: dark) {
+            .info-card:hover { border-color: rgba(74,122,96,0.4); }
+        }
+        .info-icon {
+            font-size: 24px; line-height: 1;
+            flex-shrink: 0; margin-top: 2px;
+        }
+        .info-body { flex: 1; }
+        .info-label {
+            font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+            color: var(--gl-text-muted); margin-bottom: 5px;
+        }
+        .info-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 22px; font-weight: 400;
+            color: var(--gl-text); line-height: 1.1;
+        }
+        .info-note {
+            font-size: 11px; color: var(--gl-text-muted);
+            margin-top: 3px; line-height: 1.4;
+        }
+        .info-card.info-warn {
+            background: rgba(200,60,40,0.06);
+            border-color: rgba(200,60,40,0.2);
+        }
+        .info-card.info-warn:hover { border-color: rgba(200,60,40,0.4); }
+        .info-card.info-warn .info-value { color: #c0402a; }
+        .info-card.info-warn .info-label { color: rgba(192,64,42,0.7); }
+        @media (prefers-color-scheme: dark) {
+            .info-card.info-warn {
+                background: rgba(200,60,40,0.08);
+                border-color: rgba(200,80,60,0.25);
+            }
+            .info-card.info-warn .info-value { color: #e06050; }
+            .info-card.info-warn .info-label { color: rgba(224,96,80,0.7); }
+        }
+        .info-section.hidden { display: none; }
+
+        /* === СКЕЛЕТОН === */
+        @keyframes shimmer {
+            0%   { background-position: -600px 0; }
+            100% { background-position:  600px 0; }
+        }
+        .skeleton-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+        .skeleton-card {
+            border-radius: 18px;
+            overflow: hidden;
+            background: var(--gl-card);
+            border: 1px solid var(--gl-card-border);
+            padding: 25px 22px 22px;
+            display: flex; flex-direction: column; gap: 12px;
+        }
+        .skeleton-box {
+            border-radius: 10px;
+            background: linear-gradient(90deg, var(--gl-card-border) 25%, rgba(200,200,200,0.15) 50%, var(--gl-card-border) 75%);
+            background-size: 600px 100%;
+            animation: shimmer 1.4s infinite linear;
+        }
+        .sk-img  { width: 90px; height: 90px; border-radius: 16px; align-self: center; }
+        .sk-t1   { height: 16px; width: 70%; align-self: center; }
+        .sk-t2   { height: 12px; width: 90%; align-self: center; }
+        .sk-t3   { height: 12px; width: 55%; align-self: center; }
+        .sk-btn  { height: 40px; border-radius: 25px; margin-top: 6px; }
+
+        /* === АНИМАЦИЯ КАРТОЧЕК === */
+        @keyframes card-in {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .card {
+            animation: card-in 0.4s ease both;
+        }
+
+        /* === ПОГОДА === */
+        .weather-widget {
+            display: flex; align-items: center; gap: 8px;
+            font-family: 'Jost', sans-serif;
+            cursor: default;
+        }
+        .weather-icon { font-size: 20px; line-height: 1; }
+        .weather-temp {
+            font-size: 15px; font-weight: 400;
+            color: var(--gl-text); letter-spacing: 0.04em;
+        }
+        .weather-desc {
+            font-size: 11px; color: var(--gl-text-muted);
+            letter-spacing: 0.06em;
+        }
+        .weather-loading { font-size: 18px; animation: moon-pulse 1.5s infinite; }
+
+        /* === ВРЕМЯ ОЖИДАНИЯ === */
+        .order-wait {
+            font-size: 11px; color: var(--gl-text-muted);
+            letter-spacing: 0.08em; margin-top: 4px;
+            text-align: center;
+        }
+        .order-wait.late { color: #c0402a; font-weight: 500; }
+
+        .card {
+            background: var(--gl-card);
+            border-radius: 18px;
+            padding: 28px 22px 22px;
+            text-align: center;
+            position: relative;
+            border: 1px solid var(--gl-card-border);
+            display: flex; flex-direction: column;
+            transition: transform 0.25s ease, border-color 0.25s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(74,122,96,0.35);
+        }
+
+        .card-img-wrapper {
+            width: 110px; height: 110px;
+            margin: 0 auto 16px;
+            border-radius: 20px;
+            overflow: hidden;
+            background: var(--gl-bg);
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid var(--gl-card-border);
+        }
+        .card-img { width: 70%; height: 70%; object-fit: contain; transition: transform 0.3s ease; }
+        .card:hover .card-img { transform: scale(1.08); }
+
+        .card-title {
+            font-weight: 500;
+            font-size: 15px;
+            margin-bottom: 8px;
+            color: var(--gl-text);
+            letter-spacing: 0.03em;
+        }
+        .card-desc {
+            font-size: 12px;
+            color: var(--gl-text-muted);
+            line-height: 1.5;
+            margin-bottom: 14px;
+            min-height: 34px;
+            display: flex; align-items: center; justify-content: center;
+            padding: 0 4px;
+        }
+        .card-price {
+            color: var(--gl-accent);
+            font-weight: 500;
+            font-size: 17px;
+            margin-bottom: 18px;
+            letter-spacing: 0.04em;
+        }
+
+        .btn {
+            background: var(--gl-green);
+            color: #ffffff;
+            border: none;
+            padding: 13px;
+            border-radius: 25px;
+            font-weight: 500;
+            font-size: 11px;
+            font-family: 'Jost', sans-serif;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            width: 100%;
+            margin-top: auto;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn:hover { background: var(--gl-green-light); }
+        .btn:active { transform: scale(0.98); }
+        .btn-disabled { background: var(--gl-btn-disabled-bg) !important; color: var(--gl-btn-disabled-text) !important; cursor: not-allowed; }
+
+        .status-badge {
+            position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
+            font-size: 10px; padding: 5px 16px; border-radius: 20px;
+            font-weight: 600; z-index: 10;
+            border: 1px solid var(--gl-card-border);
+            text-transform: uppercase; letter-spacing: 0.1em;
+            white-space: nowrap;
+        }
+        .status-new { background: #f5e8c0; color: #7a5a1a; border-color: #e8d090; }
+        @media (prefers-color-scheme: dark) {
+            .status-new { background: #7a5a1a; color: #f0c878; border-color: rgba(255,255,255,0.1); }
+        }
+        .status-progress { background: var(--gl-green); animation: pulse-glow 2s infinite; }
+        @keyframes pulse-glow { 0% { box-shadow: 0 0 0 0 rgba(74,122,96,0.5); } 70% { box-shadow: 0 0 0 8px rgba(74,122,96,0); } 100% { box-shadow: 0 0 0 0 rgba(74,122,96,0); } }
+
+        #dnd-overlay, #off-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #080f1e;
+            background-image:
+                radial-gradient(ellipse 80% 55% at 50% 0%, #1a3a5c 0%, transparent 60%),
+                radial-gradient(ellipse 50% 40% at 85% 95%, #0d2518 0%, transparent 55%);
+            z-index: 9999;
+            flex-direction: column; align-items: center; justify-content: center;
+            color: var(--gl-text);
+            text-align: center;
+            overflow: hidden;
+        }
+        #off-overlay h2 {
+            font-family: 'Cormorant Garamond', serif !important;
+            font-weight: 300 !important;
+            font-size: 38px !important;
+            letter-spacing: 0.1em !important;
+            color: #f0e6d3 !important;
+            margin: 0 0 20px !important;
+            text-transform: none !important;
+        }
+        .off-icon {
+            font-size: 62px; margin-bottom: 24px;
+            animation: gear-spin 6s linear infinite;
+            display: block; line-height: 1;
+        }
+        @keyframes gear-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .dnd-stars {
+            position: absolute; inset: 0; pointer-events: none;
+            background-image:
+                radial-gradient(circle, rgba(255,255,255,0.65) 1px, transparent 1px),
+                radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px);
+            background-size: 130px 130px, 85px 85px;
+            background-position: 0 0, 45px 45px;
+            opacity: 0.45;
+        }
+        .dnd-inner {
+            position: relative; z-index: 2;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .dnd-moon {
+            font-size: 62px; margin-bottom: 24px;
+            animation: moon-pulse 4s ease-in-out infinite;
+            display: block; line-height: 1;
+        }
+        @keyframes moon-pulse {
+            0%, 100% { opacity: 0.7; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(-7px); }
+        }
+        .dnd-brand {
+            font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase;
+            color: #4a7a60; margin: 0 0 16px; font-weight: 400;
+        }
+        #dnd-msg-text {
+            font-family: 'Cormorant Garamond', serif !important;
+            font-weight: 300 !important;
+            font-size: 38px !important;
+            letter-spacing: 0.1em !important;
+            color: #f0e6d3 !important;
+            margin: 0 0 20px !important;
+            text-transform: none !important;
+        }
+        .dnd-divider {
+            width: 60px; height: 1px;
+            background: linear-gradient(to right, transparent, #4a7a60, transparent);
+            margin-bottom: 18px;
+        }
+        .dnd-sub {
+            font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;
+            color: #5a8a70; margin: 0; font-weight: 300;
+        }
+        .zzz { display: none; }
+        @keyframes zzz-fly { 0% { opacity: 0; } 100% { opacity: 0; } }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(30,50,35,0.5);
+            backdrop-filter: blur(8px);
+            z-index: 2000; align-items: center; justify-content: center; padding: 20px;
+        }
+        @media (prefers-color-scheme: dark) {
+            .modal { background: rgba(5,12,25,0.88); }
+        }
+        .modal-content {
+            background: var(--gl-modal-bg);
+            border: 1px solid var(--gl-card-border);
+            color: var(--gl-text);
+            padding: 36px 32px;
+            border-radius: 22px;
+            width: 100%; max-width: 400px;
+            text-align: center;
+        }
+        .modal-content h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 300;
+            font-size: 24px;
+            letter-spacing: 0.08em;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        .qty-selector { display: flex; align-items: center; justify-content: center; gap: 28px; margin: 20px 0; }
+        .qty-btn {
+            width: 44px; height: 44px; border-radius: 50%;
+            border: 1px solid var(--gl-green);
+            background: transparent;
+            color: var(--gl-accent);
+            font-size: 22px; font-weight: 300;
+            cursor: pointer; font-family: 'Jost', sans-serif;
+            transition: background 0.2s;
+        }
+        .qty-btn:hover { background: rgba(74,122,96,0.2); }
+
+        .stars { display: flex; justify-content: center; gap: 10px; font-size: 30px; color: var(--gl-card-border); cursor: pointer; }
+        .stars span.active { color: #d4a832; }
+
+        select {
+            width: 100%; padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--gl-card-border);
+            background: var(--gl-select-bg);
+            color: var(--gl-text);
+            margin: 14px 0;
+            font-family: 'Jost', sans-serif;
+            font-size: 14px;
+            outline: none;
+        }
+
+        #cancel-btn {
+            background: none; border: none;
+            color: var(--gl-text-muted);
+            cursor: pointer;
+            font-family: 'Jost', sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-top: 16px;
+            transition: color 0.2s;
+        }
+        #cancel-btn:hover { color: var(--gl-text); }
+
+        /* WIFI MODAL */
+        #wifiModal .modal-content .fa-wifi { color: var(--gl-accent); }
+        #wifiModal .modal-content h3 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 22px; letter-spacing: 0.12em; }
+
+        #wifiModal [style*="dashed"] {
+            background: var(--gl-wifi-bg) !important;
+            border: 1px solid rgba(74,122,96,0.4) !important;
+            border-radius: 14px !important;
+            padding: 22px 24px !important;
+            text-align: left;
+        }
+        #wifi-pass-text { color: var(--gl-accent) !important; font-weight: 500 !important; }
+
+        /* КНОПКА WHATSAPP */
+        .wa-float {
+            position: fixed; bottom: 28px; right: 28px;
+            background: #2a7a45;
+            border: 1px solid rgba(37,211,102,0.25);
+            color: #e8f8ee; width: 56px; height: 56px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 26px; z-index: 1500; text-decoration: none;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .wa-float:hover { background: #1f6035; transform: scale(1.08); }
+
+        /* ССЫЛКА НА ОТЗЫВ GOOGLE */
+        .review-link {
+            display: inline-block; margin-top: 14px;
+            background: rgba(66,133,244,0.2);
+            border: 1px solid rgba(66,133,244,0.4);
+            color: #88aaee;
+            padding: 10px 20px; border-radius: 20px;
+            text-decoration: none; font-weight: 500; font-size: 12px;
+            letter-spacing: 0.08em; transition: background 0.2s;
+        }
+        .review-link:hover { background: rgba(66,133,244,0.3); }
+
+        /* LOADING */
+        #loading { color: var(--gl-text-muted); font-weight: 300; letter-spacing: 0.1em; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1 id="main-header" class="notranslate" style="display:flex;align-items:center;gap:10px;font-family:'Cormorant Garamond',serif;font-weight:300;font-size:22px;letter-spacing:0.1em;margin:0;"><svg width="22" height="22" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 3 C14 3 4 8 4 17 C4 22 8.5 25 14 25 C19.5 25 24 22 24 17 C24 8 14 3 14 3Z" fill="none" stroke="#4a7a60" stroke-width="1.3"/><path d="M14 25 L14 12" stroke="#4a7a60" stroke-width="1.1" stroke-linecap="round"/><path d="M14 16 C14 16 10 14 8 11" stroke="#4a7a60" stroke-width="0.9" stroke-linecap="round"/><path d="M14 19 C14 19 17 17 19 14" stroke="#4a7a60" stroke-width="0.9" stroke-linecap="round"/></svg><span id="header-title">Green Line Batumi</span></h1>
+    <div style="display:flex;align-items:center;gap:14px;">
+        <div class="weather-widget" id="weather-widget">
+            <span class="weather-loading">🌿</span>
+        </div>
+        <button class="wifi-btn" onclick="openWifi()"><i class="fas fa-wifi"></i> WiFi</button>
+    </div>
+</header>
+
+<div id="dnd-overlay">
+    <div class="dnd-stars"></div>
+    <div class="dnd-inner">
+        <div class="dnd-moon">🌙</div>
+        <p class="dnd-brand">Green Line · Batumi</p>
+        <h2 id="dnd-msg-text">Сладких снов</h2>
+        <div class="dnd-divider"></div>
+        <p class="dnd-sub"><span id="ui-sleep">Мы отдыхаем до</span> <span id="wake-up-time" class="notranslate">09:00</span></p>
+    </div>
+</div>
+
+<div id="off-overlay">
+    <div class="dnd-stars"></div>
+    <div class="dnd-inner">
+        <div class="off-icon">⚙️</div>
+        <p class="dnd-brand">Green Line · Batumi</p>
+        <h2 id="ui-tech">Технический перерыв</h2>
+        <div class="dnd-divider"></div>
+        <p class="dnd-sub" id="ui-tech-desc">Сервис временно недоступен.</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="room-banner-wrap">
+        <div class="room-banner">
+            <span id="ui-room">Ваш номер</span>
+            <div class="room-display">
+                <div class="room-key-wrap">
+                    <svg class="room-key-svg" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="15" cy="15" r="10" stroke="url(#goldStroke)" stroke-width="3.5" fill="none"/>
+                        <circle cx="15" cy="15" r="5" fill="url(#goldFill)" opacity="0.6"/>
+                        <rect x="22" y="13.5" width="18" height="3.5" rx="1.75" fill="url(#goldFill)"/>
+                        <rect x="34" y="17" width="3.5" height="5" rx="1.5" fill="url(#goldFill)"/>
+                        <rect x="28" y="17" width="3.5" height="4" rx="1.5" fill="url(#goldFill)"/>
+                        <defs>
+                            <linearGradient id="goldFill" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#ffe066"/>
+                                <stop offset="50%" stop-color="#d4a017"/>
+                                <stop offset="100%" stop-color="#f5c842"/>
+                            </linearGradient>
+                            <linearGradient id="goldStroke" x1="5" y1="5" x2="25" y2="25" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#ffe066"/>
+                                <stop offset="50%" stop-color="#c8900a"/>
+                                <stop offset="100%" stop-color="#f5c842"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <strong id="display-room" class="notranslate">...</strong>
+            </div>
+        </div>
+        <div class="promo-banner hidden" id="promo-banner">
+            <span class="promo-tag" id="promo-tag"></span>
+            <div class="promo-title" id="promo-title"></div>
+            <div class="promo-desc" id="promo-desc"></div>
+            <a class="promo-btn" id="promo-btn" href="#" target="_blank"></a>
+        </div>
+    </div>
+    <div id="skeleton-loader" class="skeleton-grid">
+        <div class="skeleton-card"><div class="skeleton-box sk-img"></div><div class="skeleton-box sk-t1"></div><div class="skeleton-box sk-t2"></div><div class="skeleton-box sk-t3"></div><div class="skeleton-box sk-btn"></div></div>
+        <div class="skeleton-card"><div class="skeleton-box sk-img"></div><div class="skeleton-box sk-t1"></div><div class="skeleton-box sk-t2"></div><div class="skeleton-box sk-t3"></div><div class="skeleton-box sk-btn"></div></div>
+        <div class="skeleton-card"><div class="skeleton-box sk-img"></div><div class="skeleton-box sk-t1"></div><div class="skeleton-box sk-t2"></div><div class="skeleton-box sk-t3"></div><div class="skeleton-box sk-btn"></div></div>
+        <div class="skeleton-card"><div class="skeleton-box sk-img"></div><div class="skeleton-box sk-t1"></div><div class="skeleton-box sk-t2"></div><div class="skeleton-box sk-t3"></div><div class="skeleton-box sk-btn"></div></div>
+        <div class="skeleton-card"><div class="skeleton-box sk-img"></div><div class="skeleton-box sk-t1"></div><div class="skeleton-box sk-t2"></div><div class="skeleton-box sk-t3"></div><div class="skeleton-box sk-btn"></div></div>
+        <div class="skeleton-card"><div class="skeleton-box sk-img"></div><div class="skeleton-box sk-t1"></div><div class="skeleton-box sk-t2"></div><div class="skeleton-box sk-t3"></div><div class="skeleton-box sk-btn"></div></div>
+    </div>
+    <div id="loading" style="display:none"></div>
+    <div id="services" class="services-grid"></div>
+
+    <div class="info-section hidden" id="info-section">
+        <p class="info-section-title" id="ui-info-title">Полезная информация</p>
+        <p class="info-section-sub" id="ui-info-sub">Режим работы и правила отеля</p>
+        <div class="info-divider"></div>
+        <div class="info-grid">
+            <div class="info-card" id="info-breakfast-card">
+                <div class="info-icon">🍳</div>
+                <div class="info-body">
+                    <div class="info-label" id="ui-info-breakfast">Завтрак</div>
+                    <div class="info-value" id="info-breakfast"></div>
+                </div>
+            </div>
+            <div class="info-card" id="info-checkinout-card">
+                <div class="info-icon">🔑</div>
+                <div class="info-body">
+                    <div class="info-label" id="ui-info-checkinout">Заезд / Выезд</div>
+                    <div class="info-value" id="info-checkinout"></div>
+                </div>
+            </div>
+            <div class="info-card info-warn" id="info-smoking-card">
+                <div class="info-icon">🚭</div>
+                <div class="info-body">
+                    <div class="info-label" id="ui-info-smoking">Штраф за курение в номере</div>
+                    <div class="info-value" id="info-smoking"></div>
+                </div>
+            </div>
+            <div class="info-card info-warn" id="info-damage-card">
+                <div class="info-icon">⚠️</div>
+                <div class="info-body">
+                    <div class="info-label" id="ui-info-damage">Порча имущества</div>
+                    <div class="info-value" id="info-damage"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="orderModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modal-title" style="margin-top:0"></h3>
+        <div id="options-area"></div>
+        <p id="modal-text" style="color:var(--gl-gray); font-size:14px; margin-bottom: 25px;"></p>
+        <button class="btn" id="confirm-btn">ПОДТВЕРДИТЬ</button>
+        <button onclick="closeModals()" id="cancel-btn" style="background:none; border:none; color:var(--gl-gray); margin-top:20px; cursor:pointer; font-weight:700; font-size:12px; text-transform:uppercase;">Отмена</button>
+    </div>
+</div>
+
+<div id="wifiModal" class="modal">
+    <div class="modal-content">
+        <i class="fas fa-wifi" style="font-size: 40px; color: var(--gl-green); margin-bottom: 15px;"></i>
+        <h3 id="ui-wifi-title">ИНТЕРНЕТ ДЛЯ ГОСТЕЙ</h3>
+        <div style="background:var(--gl-wifi-bg); border:2px dashed var(--gl-green); padding:25px; border-radius:20px; margin:20px 0; text-align:left; transition: 0.3s;">
+            <div style="margin-bottom: 10px;"><span id="ui-net"><b>Сеть:</b></span> <span id="wifi-name-text" class="notranslate">...</span></div>
+            <div><span id="ui-pass"><b>Пароль:</b></span> <span id="wifi-pass-text" class="notranslate" style="color:var(--gl-green); font-weight: 700;">...</span></div>
+        </div>
+        <button class="btn" id="ui-great" onclick="closeModals()">ОТЛИЧНО</button>
+    </div>
+</div>
+
+<a id="wa-btn" href="#" class="wa-float" target="_blank" style="display: none;">
+    <i class="fab fa-whatsapp"></i>
+</a>
+
+<script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwH5ZQzH4p6bmO5q7U5TDej04_Gaz5_qp4wrEywIbdr6nQlCd9SzIGKmO77waX3R-6R/exec';
+    const ID = new URLSearchParams(window.location.search).get('id');
+    let ROOM = "---";
+
+    const userLang = (navigator.language || navigator.userLanguage).substring(0, 2).toLowerCase();
+
+    let selectedService = null;
+    let currentQty = 1;
+    let lastDataHash = "";
+    window.UI = {};
+
+    let settings = {
+        DND_START: "22:00", DND_END: "09:00", MAX_QTY: 3,
+        WIFI_NAME: "Green Line", WIFI_PASS: "greenline10",
+        HEADER_TITLE: "Green Line Batumi", DND_MESSAGE: "Сладких снов",
+        SERVICE_STATUS: "ON"
+    };
+
+    async function loadData() {
+        try {
+            // Показываем кешированные данные мгновенно
+            const cached = sessionStorage.getItem('gl_v2_' + ID);
+            if (cached && !lastDataHash) {
+                const data = JSON.parse(cached);
+                applyAll(data);
+            }
+
+            const res = await fetch(`${SCRIPT_URL}?id=${ID}&lang=${userLang}`);
+            const data = await res.json();
+
+            const currentDataHash = JSON.stringify(data);
+            if (currentDataHash === lastDataHash) return;
+            lastDataHash = currentDataHash;
+
+            sessionStorage.setItem('gl_v2_' + ID, currentDataHash);
+            applyAll(data);
+
+        } catch (e) {
+            console.error("Ошибка загрузки данных:", e);
+        }
+    }
+
+    function applyAll(data) {
+        if (data.ui) applyUITexts(data.ui);
+        if (data.settings) {
+            settings = {...settings, ...data.settings};
+            if (settings.CURRENT_ROOM) {
+                ROOM = settings.CURRENT_ROOM;
+                document.getElementById('display-room').innerText = ROOM;
+            }
+            applySettings();
+        }
+        if (data.promo) applyPromo(data.promo);
+        if (data.info)  applyInfo(data.info);
+        render(data.catalog, data.activeOrders);
+        // Скрываем скелетон
+        const sk = document.getElementById('skeleton-loader');
+        if (sk) sk.style.display = 'none';
+    }
+
+    function applyUITexts(ui) {
+        window.UI = ui;
+        document.getElementById('ui-room').innerText = ui.roomTitle;
+        document.getElementById('ui-sleep').innerText = ui.sleep;
+        document.getElementById('ui-tech').innerText = ui.tech;
+        document.getElementById('ui-tech-desc').innerText = ui.techDesc;
+        document.getElementById('ui-wifi-title').innerText = ui.wifiTitle;
+        document.getElementById('ui-net').innerHTML = `<b>${ui.net}</b>`;
+        document.getElementById('ui-pass').innerHTML = `<b>${ui.pass}</b>`;
+        document.getElementById('ui-great').innerText = ui.great;
+        document.getElementById('confirm-btn').innerText = ui.confirm;
+        document.getElementById('cancel-btn').innerText = ui.cancel;
+        if (ui.infoTitle)      document.getElementById('ui-info-title').innerText      = ui.infoTitle;
+        if (ui.infoSub)        document.getElementById('ui-info-sub').innerText        = ui.infoSub;
+        if (ui.infoBreakfast)  document.getElementById('ui-info-breakfast').innerText  = ui.infoBreakfast;
+        if (ui.infoCheckinout) document.getElementById('ui-info-checkinout').innerText = ui.infoCheckinout;
+        if (ui.infoSmoking)    document.getElementById('ui-info-smoking').innerText    = ui.infoSmoking;
+        if (ui.infoDamage)     document.getElementById('ui-info-damage').innerText     = ui.infoDamage;
+    }
+
+    function applyPromo(promo) {
+        const banner = document.getElementById('promo-banner');
+        if (!promo || String(promo.PROMO_ACTIVE).toUpperCase() !== 'TRUE') {
+            banner.classList.add('hidden');
+            return;
+        }
+        document.getElementById('promo-tag').innerText   = promo.PROMO_TAG   || '';
+        document.getElementById('promo-title').innerText = promo.PROMO_TITLE || '';
+        document.getElementById('promo-desc').innerText  = promo.PROMO_DESC  || '';
+        const btn = document.getElementById('promo-btn');
+        if (promo.PROMO_BTN) {
+            btn.innerText = promo.PROMO_BTN;
+            btn.href = promo.PROMO_LINK || '#';
+            btn.style.display = promo.PROMO_LINK ? 'inline-block' : 'none';
+        } else {
+            btn.style.display = 'none';
+        }
+        banner.classList.remove('hidden');
+    }
+
+    function applyInfo(info) {
+        const section = document.getElementById('info-section');
+        if (!info || Object.keys(info).length === 0) { section.classList.add('hidden'); return; }
+
+        const set = (id, val) => {
+            const el = document.getElementById(id);
+            const card = document.getElementById(id + '-card');
+            if (val) { el.innerText = val; if (card) card.style.display = ''; }
+            else { if (card) card.style.display = 'none'; }
+        };
+
+        set('info-breakfast', info.INFO_BREAKFAST);
+
+        // Объединяем заезд и выезд
+        const checkin  = info.INFO_CHECKIN  || '';
+        const checkout = info.INFO_CHECKOUT || '';
+        const checkinout = checkin && checkout ? `${checkin} / ${checkout}` : (checkin || checkout);
+        const coCard = document.getElementById('info-checkinout-card');
+        if (checkinout) {
+            document.getElementById('info-checkinout').innerText = checkinout;
+            if (coCard) coCard.style.display = '';
+        } else {
+            if (coCard) coCard.style.display = 'none';
+        }
+
+        set('info-smoking', info.INFO_SMOKING);
+        set('info-damage',  info.INFO_DAMAGE);
+        section.classList.remove('hidden');
+    }
+
+    function applySettings() {
+        const isOff = settings.SERVICE_STATUS === 'OFF';
+        document.getElementById('off-overlay').style.display = isOff ? 'flex' : 'none';
+
+        const now = new Date();
+        const cur = now.getHours() * 60 + now.getMinutes();
+        const [sH, sM] = settings.DND_START.split(':').map(Number);
+        const [eH, eM] = settings.DND_END.split(':').map(Number);
+        const start = sH * 60 + sM; const end = eH * 60 + eM;
+        const isSleep = start > end ? (cur >= start || cur < end) : (cur >= start && cur < end);
+        const isDndActive = isSleep && settings.SERVICE_STATUS === 'ON';
+
+        document.getElementById('dnd-overlay').style.display = isDndActive ? 'flex' : 'none';
+
+        // === БЛОКИРОВКА СКРОЛЛА ПРИ АКТИВНЫХ ОВЕРЛЕЯХ ===
+        if (isOff || isDndActive) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('dnd-msg-text').innerText = settings.DND_MESSAGE;
+        document.getElementById('wake-up-time').innerText = settings.DND_END;
+        document.getElementById('header-title').innerText = settings.HEADER_TITLE;
+        document.getElementById('wifi-name-text').innerText = settings.WIFI_NAME;
+        document.getElementById('wifi-pass-text').innerText = settings.WIFI_PASS;
+
+        // ПРАВИЛЬНАЯ НАСТРОЙКА КНОПКИ WHATSAPP
+        if (settings.RECEPTION_WA) {
+            const waBtn = document.getElementById('wa-btn');
+
+            // Формируем красивое приветствие с именем (если оно есть в таблице)
+            let greeting = "Здравствуйте!";
+            if (settings.RECEPTION_NAME && settings.RECEPTION_NAME !== "undefined" && settings.RECEPTION_NAME !== "null") {
+                greeting = `Здравствуйте, ${settings.RECEPTION_NAME}!`;
+            }
+
+            // Собираем итоговое сообщение
+            const msg = encodeURIComponent(`${greeting} Я из номера ${ROOM}. У меня вопрос: `);
+
+            // Используем официальный API вместо сокращателя wa.me
+            waBtn.href = `https://api.whatsapp.com/send?phone=${settings.RECEPTION_WA}&text=${msg}`;
+            waBtn.style.display = 'flex';
+        }
+    }
+
+    function render(catalog, activeOrders) {
+        const container = document.getElementById('services'); container.innerHTML = '';
+
+        catalog.forEach((item, idx) => {
+            const originalRuName = item.ru_name || "";
+            const title = item["Название услуги"] || "";
+
+            if (originalRuName.toLowerCase().includes("wifi") || originalRuName.toLowerCase().includes("интернет")) return;
+
+            const order = activeOrders.find(o => String(o["Заказ"]).startsWith(originalRuName) || String(o["Заказ"]).startsWith(title));
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.animationDelay = `${idx * 60}ms`;
+
+            let badge = '', btn = `<button class="btn" onclick="openOrder('${originalRuName.replace(/'/g, "\\'")}', '${title.replace(/'/g, "\\'")}', '${item["Цена"]}', '${(item["Опции"]||"").replace(/'/g, "\\'")}', ${item.isQty}, '${item["Категория"]}')">${window.UI.orderBtn}</button>`;
+            let waitHtml = '';
+
+            if (order) {
+                const s = String(order["Статус"]).trim();
+                const orderDate = order["Дата"] ? new Date(order["Дата"]) : null;
+                const waitMins = orderDate && !isNaN(orderDate) ? Math.floor((Date.now() - orderDate) / 60000) : null;
+
+                if (s === "Выполнено" || s === "Ready" || s === "Готово") {
+                    badge = `<div class="status-badge" style="background:#2ecc71">${window.UI.ready}</div>`;
+                    btn = `<div class="stars" id="stars-${order["ID"]}">${[1,2,3,4,5].map(n => `<span onclick="sendRating(${order["ID"]}, ${n})">★</span>`).join('')}</div>`;
+                } else if (s === "В обработке" || s === "In progress") {
+                    badge = `<div class="status-badge status-progress">${window.UI.in_work}</div>`;
+                    btn = `<button class="btn btn-disabled" disabled>${window.UI.in_work}</button>`;
+                    if (waitMins !== null) {
+                        const isLate = waitMins > 15;
+                        waitHtml = `<div class="order-wait${isLate ? ' late' : ''}">⏱ ${waitMins} мин.</div>`;
+                    }
+                } else {
+                    badge = `<div class="status-badge status-new">${window.UI.new_ord}</div>`;
+                    btn = `<button class="btn btn-disabled" disabled>${window.UI.new_ord}</button>`;
+                    if (waitMins !== null) {
+                        const isLate = waitMins > 10;
+                        waitHtml = `<div class="order-wait${isLate ? ' late' : ''}">⏱ ${waitMins} мин.</div>`;
+                    }
+                }
+            }
+
+            const fileName = item["Фото"] ? item["Фото"].trim() : "";
+            let imgSrc = "https://img.icons8.com/ios/150/00b127/service.png";
+            if (fileName) imgSrc = `img/${fileName}`;
+
+            const priceVal = parseFloat(String(item["Цена"]).replace(',','.'));
+            const priceText = (priceVal > 0) ? item["Цена"] + ' ₾' : (window.UI.free || "Бесплатно");
+            const description = item["Описание"] || "";
+
+            card.innerHTML = `
+                ${badge}
+                <div class="card-img-wrapper"><img src="${imgSrc}" class="card-img"></div>
+                <div class="card-title">${title}</div>
+                <div class="card-desc">${description}</div>
+                <div class="card-price notranslate">${priceText}</div>
+                ${btn}
+                ${waitHtml}`;
+            container.appendChild(card);
+        });
+    }
+
+    function openOrder(ru_name, local_name, price, opts, isQty, cat) {
+        selectedService = { ru_name, price, cat }; currentQty = 1;
+
+        const btn = document.getElementById('confirm-btn');
+        btn.disabled = false;
+        btn.innerText = window.UI.confirm || "ПОДТВЕРДИТЬ";
+
+        const area = document.getElementById('options-area'); area.innerHTML = '';
+
+        if (isQty) {
+            area.innerHTML = `<p style="font-size:13px; color:var(--gl-gray)">${window.UI.qtyDesc}</p><div class="qty-selector"><button class="qty-btn" onclick="updateQty(-1)">-</button><span id="q-val" class="notranslate" style="font-size:24px; font-weight:700; width:40px; color:var(--gl-text);">1</span><button class="qty-btn" onclick="updateQty(1)">+</button></div>`;
+        } else if (opts) {
+            const sel = document.createElement('select'); sel.id = "opt-sel";
+            opts.split(',').forEach(o => { const op = document.createElement('option'); op.text = o.trim(); sel.add(op); });
+            area.innerHTML = `<p style="font-size:13px; color:var(--gl-gray)">${window.UI.typeDesc}</p>`;
+            area.appendChild(sel);
+        }
+        document.getElementById('modal-title').innerText = local_name;
+        document.getElementById('orderModal').style.display = 'flex';
+        // === БЛОКИРОВКА СКРОЛЛА ПРИ ОТКРЫТИИ МОДАЛКИ ЗАКАЗА ===
+        document.body.style.overflow = 'hidden';
+    }
+
+    function updateQty(d) {
+        const max = parseInt(settings.MAX_QTY) || 3;
+        currentQty = Math.max(1, Math.min(max, currentQty + d));
+        document.getElementById('q-val').innerText = currentQty;
+    }
+
+    // ЛОГИКА БУСТЕРА ОТЗЫВОВ
+    async function sendRating(id, r) {
+        const starContainer = document.getElementById(`stars-${id}`);
+        if (starContainer.style.pointerEvents === 'none') return;
+        starContainer.style.pointerEvents = 'none';
+
+        const stars = starContainer.querySelectorAll('span');
+        stars.forEach((s, i) => s.classList.toggle('active', i < r));
+
+        setTimeout(async () => {
+            let feedbackHTML = `<div style='color: var(--gl-green); font-size: 12px; font-weight: 700'>${window.UI.thanks || "СПАСИБО!"}</div>`;
+
+            // Если гость ставит 5 звезд - даем ссылку на Google
+            if (r === 5 && settings.GOOGLE_MAPS_LINK) {
+                feedbackHTML += `<br><a href="${settings.GOOGLE_MAPS_LINK}" target="_blank" class="review-link">ОЦЕНИТЬ НАС В GOOGLE ⭐</a>`;
+            } else if (r < 4) {
+                feedbackHTML = `<div style='color: #e74c3c; font-size: 11px; font-weight: 600; margin-top: 10px;'>Нам очень жаль! Мы уже передали информацию руководству.</div>`;
+            }
+
+            starContainer.innerHTML = feedbackHTML;
+            await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "rate", orderId: id, rating: r, room: ROOM }) });
+            lastDataHash = "";
+            setTimeout(loadData, 6000);
+        }, 400);
+    }
+
+    document.getElementById('confirm-btn').onclick = async () => {
+        const btn = document.getElementById('confirm-btn'); btn.disabled = true; btn.innerText = window.UI.sending || "ОТПРАВКА...";
+
+        const opt = document.getElementById('opt-sel') ? ': ' + document.getElementById('opt-sel').value : '';
+        await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ room: ROOM, orderText: selectedService.ru_name + opt, quantity: currentQty, totalPrice: selectedService.price, category: selectedService.cat })});
+
+        closeModals();
+        lastDataHash = "";
+        setTimeout(loadData, 1000);
+    };
+
+    function openWifi() {
+        document.getElementById('wifiModal').style.display = 'flex';
+        // === БЛОКИРОВКА СКРОЛЛА ПРИ ОТКРЫТИИ МОДАЛКИ WIFI ===
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModals() {
+        document.getElementById('orderModal').style.display = 'none';
+        document.getElementById('wifiModal').style.display = 'none';
+        // === ВОЗВРАЩАЕМ СКРОЛЛ ПРИ ЗАКРЫТИИ ===
+        document.body.style.overflow = '';
+    }
+
+    // === ПОГОДА ===
+    async function loadWeather() {
+        const widget = document.getElementById('weather-widget');
+        if (!widget) return;
+        // Координаты из настроек или дефолт Батуми
+        const lat = (settings && settings.WEATHER_LAT) ? settings.WEATHER_LAT : '41.6168';
+        const lon = (settings && settings.WEATHER_LON) ? settings.WEATHER_LON : '41.6367';
+        const WMO = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
+        try {
+            const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode&timezone=auto`);
+            const d = await r.json();
+            const temp = Math.round(d.current.temperature_2m);
+            const code = d.current.weathercode;
+            const icon = WMO[code] || '🌡️';
+            const useFahrenheit = ['en-US', 'en-LR', 'en-MM'].includes(navigator.language) || navigator.language.startsWith('en-US');
+            const tempStr = useFahrenheit ? `${Math.round(temp * 9/5 + 32)}°F` : `${temp}°C`;
+            widget.innerHTML = `<span class="weather-icon">${icon}</span><span class="weather-temp">${tempStr}</span>`;
+        } catch(e) {
+            widget.innerHTML = '';
+        }
+    }
+
+    loadData(); setInterval(loadData, 20000);
+    setTimeout(loadWeather, 500);
+</script>
+</body>
+</html>
